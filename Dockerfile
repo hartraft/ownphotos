@@ -1,6 +1,4 @@
-FROM ubuntu:16.04
-MAINTAINER Hooram Nam <nhooram@gmail.com>
-
+FROM guysoft/pytorch-docker-armv7
 ENV MAPZEN_API_KEY mapzen-XXXX
 ENV MAPBOX_API_KEY mapbox-XXXX
 ENV ALLOWED_HOSTS=*
@@ -15,36 +13,45 @@ RUN apt-get update && \
     curl \
     nginx 
 
-RUN apt-get install -y bzip2
+RUN apt-get install -y bzip2 python3-pip
 
 
-RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-RUN bash Miniconda3-latest-Linux-x86_64.sh -b -p /miniconda
+#RUN wget http://repo.continuum.io/miniconda/Miniconda4-latest-Linux-armv7l.sh
+#RUN chmod 755 Miniconda4-latest-Linux-armv7l.sh
+#RUN ./Miniconda3-latest-Linux-armv7l.sh -b -p /miniconda
 # RUN apt-get install libopenblas-dev liblapack-dev
-RUN /miniconda/bin/conda install -y faiss-cpu -c pytorch
-RUN /miniconda/bin/conda install -y cython
+#RUN /miniconda/bin/conda install -y faiss-cpu
+#RUN /miniconda/bin/conda install -y cython
+
+#RUN pip3 install faiss
+RUN pip3 install cython
 
 # Build and install dlib
 RUN apt-get update && \
     apt-get install -y cmake git build-essential && \
-    git clone https://github.com/davisking/dlib.git && \
+    git clone https://github.com/davisking/dlib.git /dlib && \
     mkdir /dlib/build && \
     cd /dlib/build && \
     cmake .. -DDLIB_USE_CUDA=0 -DUSE_AVX_INSTRUCTIONS=0 && \
     cmake --build . && \
     cd /dlib && \
-    /miniconda/bin/python setup.py install --no USE_AVX_INSTRUCTIONS --no DLIB_USE_CUDA 
+    python3 setup.py install --no USE_AVX_INSTRUCTIONS --no DLIB_USE_CUDA 
 
-RUN /miniconda/bin/conda install -y pytorch=0.4.1 -c pytorch
+#RUN /miniconda/bin/conda install -y pytorch=0.4.1 -c pytorch
 # RUN /venv/bin/pip install http://download.pytorch.org/whl/cpu/torch-0.4.1-cp35-cp35m-linux_x86_64.whl && /venv/bin/pip install torchvision
-RUN /miniconda/bin/conda install -y psycopg2
+RUN apt-get install -y libpq-dev pkg-config libfreetype6-dev libpng-dev libffi-dev python3-dev python3-setuptools gfortran libjpeg8-dev zlib1g-dev libtiff-dev libfreetype6 libfreetype6-dev libwebp-dev libopenjp2-7-dev libopenjp2-7-dev
+
+RUN pip3 install pillow --global-option="build_ext" --global-option="--enable-zlib" --global-option="--enable-jpeg" --global-option="--enable-tiff" --global-option="--enable-freetype" --global-option="--enable-webp" --global-option="--enable-webpmux" --global-option="--enable-jpeg2000"
+
+RUN pip3 install psycopg2
+RUN pip3 install numpy
 
 RUN mkdir /code
 WORKDIR /code
 COPY requirements.txt /code/
-RUN /miniconda/bin/pip install -r requirements.txt
+RUN pip3 install -r requirements.txt
 
-RUN /miniconda/bin/python -m spacy download en_core_web_sm
+RUN python3 -m spacy download en_core_web_sm
 
 WORKDIR /code/api/places365
 RUN wget https://s3.eu-central-1.amazonaws.com/ownphotos-deploy/places365_model.tar.gz
