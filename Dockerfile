@@ -3,7 +3,7 @@ ENV MAPZEN_API_KEY mapzen-XXXX
 ENV MAPBOX_API_KEY mapbox-XXXX
 ENV ALLOWED_HOSTS=*
 
-RUN apt-get update && \
+RUN echo '* libraries/restart-without-asking boolean true' | debconf-set-selections && apt-get update && \
     apt-get install -y \
     libsm6 \
     libboost-all-dev \
